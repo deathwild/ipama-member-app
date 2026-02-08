@@ -5,105 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IPAMA - Daftar & List Anggota</title>
   <style>
-    :root {
-      --bg: #0b1020;
-      --card: #121a33;
-      --text: #e9edff;
-      --muted: #b7c0ff;
-      --accent: #6ea8ff;
-      --danger: #ff6b6b;
-      --ok: #2ecc71;
-      --border: rgba(255,255,255,.12);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 600px at 10% 0%, #17204a 0%, var(--bg) 55%);
-      color: var(--text);
-    }
-    header {
-      padding: 20px 16px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      backdrop-filter: blur(10px);
-      background: rgba(11,16,32,.75);
-      z-index: 10;
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    .row { display: grid; gap: 16px; }
-    @media (min-width: 960px) { .row { grid-template-columns: 1.2fr 1.8fr; } }
-    h1 { font-size: 18px; margin: 0; letter-spacing: .4px; }
-    .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
-    main { padding: 18px 16px 40px; }
-    .card {
-      background: rgba(18,26,51,.78);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.28);
-    }
-    .card h2 { margin: 0 0 12px; font-size: 14px; color: #d8e2ff; }
-    .grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
-    @media (min-width: 560px) { .grid.two { grid-template-columns: 1fr 1fr; } }
-    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    input, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      outline: none;
-    }
-    textarea { min-height: 86px; resize: vertical; }
-    button {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button.primary { border-color: rgba(110,168,255,.6); background: rgba(110,168,255,.18); }
-    button.danger { border-color: rgba(255,107,107,.55); background: rgba(255,107,107,.12); }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-    .pill {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .pill b { color: var(--text); font-weight: 700; }
-    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
-    th, td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
-    th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 700; }
-    tr:hover td { background: rgba(255,255,255,.03); }
-    .muted { color: var(--muted); }
-    .status { font-size: 12px; margin-top: 10px; }
-    .status.ok { color: var(--ok); }
-    .status.err { color: var(--danger); }
-    .modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(0,0,0,.55);
-      z-index: 20;
-    }
-    .modal.on { display: flex; }
-    .modal .box { width: min(560px, 100%); }
-    .small { font-size: 12px; }
+    :root{--bg:#0b1020;--card:#121a33;--text:#e9edff;--muted:#b7c0ff;--danger:#ff6b6b;--ok:#2ecc71;--border:rgba(255,255,255,.12)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:radial-gradient(1200px 600px at 10% 0%,#17204a 0%,var(--bg) 55%);color:var(--text)}
+    header{padding:20px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;backdrop-filter:blur(10px);background:rgba(11,16,32,.75);z-index:10}
+    .wrap{max-width:1100px;margin:0 auto}
+    .row{display:grid;gap:16px}
+    @media (min-width:960px){.row{grid-template-columns:1.2fr 1.8fr}}
+    h1{font-size:18px;margin:0;letter-spacing:.4px}
+    .sub{color:var(--muted);font-size:12px;margin-top:6px}
+    main{padding:18px 16px 40px}
+    .card{background:rgba(18,26,51,.78);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+    .card h2{margin:0 0 12px;font-size:14px;color:#d8e2ff}
+    .grid{display:grid;gap:10px;grid-template-columns:1fr}
+    @media (min-width:560px){.grid.two{grid-template-columns:1fr 1fr}}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);outline:none}
+    textarea{min-height:86px;resize:vertical}
+    button{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:600}
+    button.primary{border-color:rgba(110,168,255,.6);background:rgba(110,168,255,.18)}
+    button.danger{border-color:rgba(255,107,107,.55);background:rgba(255,107,107,.12)}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted);font-size:12px}
+    .pill b{color:var(--text);font-weight:700}
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:12px}
+    th,td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+    th{text-align:left;font-size:12px;color:var(--muted);font-weight:700}
+    tr:hover td{background:rgba(255,255,255,.03)}
+    .muted{color:var(--muted)}
+    .status{font-size:12px;margin-top:10px}
+    .status.ok{color:var(--ok)}
+    .status.err{color:var(--danger)}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.55);z-index:20}
+    .modal.on{display:flex}
+    .modal .box{width:min(560px,100%)}
+    .small{font-size:12px}
   </style>
 </head>
 <body>
@@ -204,7 +141,7 @@
   </div>
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbyAW41FmYHCKbejUj3D1KBzV6xnYkBgcc5ohfDIY903wuDwabwbTG1ik-5W7Q-aUVjJ/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzCWZp4Q0pZf1w7KEyAMI2Mv09XIClxcvYHpJR7_gWMYrx2V1YgcjiJoBsdPsKyp7st/exec';
 
   let adminPassword = '';
   let isAdmin = false;
@@ -255,7 +192,7 @@
   function toCSV(rows, columns) {
     const esc = (v) => {
       const s = String(v ?? '');
-      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      if (/[\",\n]/.test(s)) return '"' + s.replace(/\"/g, '""') + '"';
       return s;
     };
     const head = columns.map(esc).join(',');
@@ -301,39 +238,14 @@
     return json.data || [];
   }
 
-  async function apiRegister(payload) {
-    const res = await fetch(API_URL, {
+  // POST pakai no-cors (anti Failed to fetch). Setelah POST, selalu refresh list.
+  async function postNoCors(bodyObj) {
+    await fetch(API_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(bodyObj)
     });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Gagal daftar');
-    return json;
-  }
-
-  async function apiUpdate(id, payload) {
-    const body = { action: 'update', id, password: adminPassword, ...payload };
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(body)
-    });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Gagal update');
-    return json;
-  }
-
-  async function apiDelete(id) {
-    const body = { action: 'delete', id, password: adminPassword };
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(body)
-    });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Gagal hapus');
-    return json;
   }
 
   function renderTable(rows) {
@@ -473,7 +385,10 @@
     document.getElementById('doSave').onclick = async () => {
       try {
         setStatus(modalStatus, 'Menyimpan...', true);
-        await apiUpdate(id, {
+        await postNoCors({
+          action: 'update',
+          id,
+          password: adminPassword,
           nama: document.getElementById('e_nama').value,
           no_wa: document.getElementById('e_no_wa').value,
           prodi: document.getElementById('e_prodi').value,
@@ -484,7 +399,7 @@
         await refresh();
         closeModal();
       } catch (e) {
-        setStatus(modalStatus, 'Error: ' + e.message, false);
+        setStatus(modalStatus, 'Gagal simpan. Coba refresh dan ulangi.', false);
       }
     };
   }
@@ -506,12 +421,12 @@
     try {
       setStatus(regStatus, 'Mengirim...', true);
       document.getElementById('btnSubmit').disabled = true;
-      await apiRegister(payload);
+      await postNoCors(payload);
       regForm.reset();
-      setStatus(regStatus, 'Berhasil daftar. Terima kasih!', true);
+      setStatus(regStatus, 'Terkirim. Jika data belum muncul, klik Refresh List.', true);
       await refresh();
     } catch (err) {
-      setStatus(regStatus, 'Error: ' + err.message, false);
+      setStatus(regStatus, 'Gagal kirim. Coba lagi.', false);
     } finally {
       document.getElementById('btnSubmit').disabled = false;
     }
@@ -531,11 +446,11 @@
       if (!ok) return;
       try {
         setStatus(listStatus, 'Menghapus...', true);
-        await apiDelete(id);
+        await postNoCors({ action: 'delete', id, password: adminPassword });
         await refresh();
         setStatus(listStatus, 'Terhapus.', true);
       } catch (err) {
-        setStatus(listStatus, 'Error: ' + err.message, false);
+        setStatus(listStatus, 'Gagal hapus. Coba refresh dan ulangi.', false);
       }
     }
   });
