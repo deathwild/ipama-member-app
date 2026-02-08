@@ -25,14 +25,12 @@
     button{appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:600}
     button.primary{border-color:rgba(110,168,255,.6);background:rgba(110,168,255,.18)}
     button.danger{border-color:rgba(255,107,107,.55);background:rgba(255,107,107,.12)}
-    button:disabled{opacity:.5;cursor:not-allowed}
     .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
     .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted);font-size:12px}
     .pill b{color:var(--text);font-weight:700}
     table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:12px}
     th,td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
     th{text-align:left;font-size:12px;color:var(--muted);font-weight:700}
-    tr:hover td{background:rgba(255,255,255,.03)}
     .muted{color:var(--muted)}
     .status{font-size:12px;margin-top:10px}
     .status.ok{color:var(--ok)}
@@ -40,14 +38,13 @@
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.55);z-index:20}
     .modal.on{display:flex}
     .modal .box{width:min(560px,100%)}
-    .small{font-size:12px}
   </style>
 </head>
 <body>
   <header>
     <div class="wrap">
       <h1>IPAMA — Daftar & List Anggota</h1>
-      <div class="sub">Form pendaftaran + daftar anggota (sinkron ke Google Spreadsheet)</div>
+      <div class="sub">GitHub Pages + Google Sheets (JSONP anti CORS)</div>
     </div>
   </header>
 
@@ -93,7 +90,7 @@
           </div>
 
           <div class="toolbar">
-            <button class="primary" type="submit" id="btnSubmit">Daftar</button>
+            <button class="primary" type="submit">Daftar</button>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
               <button type="button" id="btnRefresh">Refresh List</button>
               <button type="button" id="btnAdmin">Login Admin</button>
@@ -103,8 +100,6 @@
 
           <div id="regStatus" class="status"></div>
         </form>
-
-        <div class="small muted" style="margin-top:10px;">Tanggal daftar otomatis tercatat saat kamu submit.</div>
       </section>
 
       <section class="card">
@@ -116,7 +111,7 @@
           </div>
         </div>
 
-        <div class="muted small" id="count"></div>
+        <div class="muted" id="count"></div>
         <div style="overflow:auto; border:1px solid var(--border); border-radius:12px; margin-top:10px;">
           <table>
             <thead><tr id="thead"></tr></thead>
@@ -166,54 +161,55 @@
   const modalStatus = document.getElementById('modalStatus');
   const modalClose = document.getElementById('modalClose');
 
-  function setStatus(el, msg, ok=true) {
+  function setStatus(el, msg, ok=true){
     el.textContent = msg || '';
     el.className = 'status ' + (msg ? (ok ? 'ok' : 'err') : '');
   }
 
-  function openModal(title, html) {
-    modalTitle.textContent = title;
-    modalBody.innerHTML = html;
-    modalStatus.textContent = '';
-    modalStatus.className = 'status';
-    modal.classList.add('on');
-    modal.setAttribute('aria-hidden', 'false');
-  }
-
-  function closeModal() {
-    modal.classList.remove('on');
-    modal.setAttribute('aria-hidden', 'true');
-  }
-
-  function escapeHtml(s) {
+  function escapeHtml(s){
     return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
-  function toCSV(rows, columns) {
-    const esc = (v) => {
-      const s = String(v ?? '');
-      if (/[\",\n]/.test(s)) return '"' + s.replace(/\"/g, '""') + '"';
-      return s;
-    };
-    const head = columns.map(esc).join(',');
-    const body = rows.map(r => columns.map(c => esc(r[c])).join(',')).join('\n');
-    return head + '\n' + body;
+  // ===== JSONP core =====
+  function jsonp(params){
+    return new Promise((resolve, reject) => {
+      const cb = '__ipama_cb_' + Math.random().toString(36).slice(2);
+      params.callback = cb;
+
+      const url = new URL(API_URL);
+      Object.keys(params).forEach(k => {
+        if (params[k] !== undefined && params[k] !== null) url.searchParams.set(k, String(params[k]));
+      });
+
+      const script = document.createElement('script');
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout'));
+      }, 15000);
+
+      function cleanup(){
+        clearTimeout(timeout);
+        delete window[cb];
+        script.remove();
+      }
+
+      window[cb] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = () => {
+        cleanup();
+        reject(new Error('Gagal memuat JSONP'));
+      };
+
+      script.src = url.toString();
+      document.body.appendChild(script);
+    });
   }
 
-  function download(filename, content, mime='text/plain') {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function updateAdminUI() {
-    if (isAdmin) {
+  function updateAdminUI(){
+    if (isAdmin){
       adminBadge.innerHTML = 'Mode: <b>Admin</b>';
       btnAdmin.style.display = 'none';
       btnLogout.style.display = 'inline-block';
@@ -226,51 +222,55 @@
     }
   }
 
-  async function apiGetMembers() {
-    const url = new URL(API_URL);
-    if (adminPassword) url.searchParams.set('password', adminPassword);
-
-    const res = await fetch(url.toString(), { method: 'GET' });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Gagal mengambil data');
-    isAdmin = !!json.isAdmin;
+  async function loadMembers(){
+    const res = await jsonp(adminPassword ? { password: adminPassword } : {});
+    if (!res.ok) throw new Error(res.error || 'Gagal mengambil data');
+    isAdmin = !!res.isAdmin;
     updateAdminUI();
-    return json.data || [];
+    return res.data || [];
   }
 
-  // POST pakai no-cors (anti Failed to fetch). Setelah POST, selalu refresh list.
-  async function postNoCors(bodyObj) {
-    await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(bodyObj)
-    });
+  async function createMember(payload){
+    const res = await jsonp({ action:'create', ...payload });
+    if (!res.ok) throw new Error(res.error || 'Gagal daftar');
+    return res;
   }
 
-  function renderTable(rows) {
-    const publicCols = [
-      { key: 'tanggal_daftar', label: 'Tanggal' },
-      { key: 'nama', label: 'Nama' },
-      { key: 'prodi', label: 'Prodi' },
-      { key: 'kelas', label: 'Kelas' },
+  async function updateMember(id, payload){
+    const res = await jsonp({ action:'update', password: adminPassword, id, ...payload });
+    if (!res.ok) throw new Error(res.error || 'Gagal update');
+    return res;
+  }
+
+  async function deleteMember(id){
+    const res = await jsonp({ action:'delete', password: adminPassword, id });
+    if (!res.ok) throw new Error(res.error || 'Gagal hapus');
+    return res;
+  }
+
+  function render(rows){
+    const publicCols=[
+      {key:'tanggal_daftar',label:'Tanggal'},
+      {key:'nama',label:'Nama'},
+      {key:'prodi',label:'Prodi'},
+      {key:'kelas',label:'Kelas'},
     ];
-    const adminCols = publicCols.concat([
-      { key: 'no_wa', label: 'No WA' },
-      { key: 'alamat', label: 'Alamat' },
-      { key: 'alasan', label: 'Alasan' },
+    const adminCols=publicCols.concat([
+      {key:'no_wa',label:'No WA'},
+      {key:'alamat',label:'Alamat'},
+      {key:'alasan',label:'Alasan'},
     ]);
 
     const cols = isAdmin ? adminCols : publicCols;
 
-    thead.innerHTML = cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('') + (isAdmin ? '<th>Aksi</th>' : '');
+    thead.innerHTML = cols.map(c=>`<th>${escapeHtml(c.label)}</th>`).join('') + (isAdmin?'<th>Aksi</th>':'');
 
-    tbody.innerHTML = rows.map(r => {
-      const tds = cols.map(c => {
-        let v = r[c.key];
-        if (c.key === 'tanggal_daftar') {
-          const s = String(v ?? '');
-          v = s ? s.replace('T', ' ').slice(0, 16) : '';
+    tbody.innerHTML = rows.map(r=>{
+      const tds = cols.map(c=>{
+        let v=r[c.key];
+        if (c.key==='tanggal_daftar'){
+          const s=String(v??'');
+          v=s?s.replace('T',' ').slice(0,16):'';
         }
         return `<td>${escapeHtml(v)}</td>`;
       }).join('');
@@ -279,8 +279,7 @@
         <td style="white-space:nowrap;">
           <button data-act="edit" data-id="${escapeHtml(r.id)}">Edit</button>
           <button class="danger" data-act="del" data-id="${escapeHtml(r.id)}">Hapus</button>
-        </td>
-      ` : '';
+        </td>` : '';
 
       return `<tr>${tds}${actions}</tr>`;
     }).join('');
@@ -288,27 +287,41 @@
     count.textContent = `Total: ${rows.length} anggota`;
   }
 
-  function getFilteredMembers() {
+  function filtered(){
     const q = search.value.trim().toLowerCase();
     if (!q) return members;
-    return members.filter(m => {
-      const fields = [m.nama, m.prodi, m.kelas].map(x => String(x ?? '').toLowerCase()).join(' ');
-      return fields.includes(q);
+    return members.filter(m=>{
+      const s = [m.nama,m.prodi,m.kelas].map(x=>String(x??'').toLowerCase()).join(' ');
+      return s.includes(q);
     });
   }
 
-  async function refresh() {
-    try {
-      setStatus(listStatus, 'Memuat data...', true);
-      members = await apiGetMembers();
-      renderTable(getFilteredMembers());
-      setStatus(listStatus, '', true);
-    } catch (e) {
-      setStatus(listStatus, 'Error: ' + e.message, false);
+  async function refresh(){
+    try{
+      setStatus(listStatus,'Memuat data...',true);
+      members = await loadMembers();
+      render(filtered());
+      setStatus(listStatus,'',true);
+    }catch(e){
+      setStatus(listStatus,'Error: '+e.message,false);
     }
   }
 
-  function showAdminLogin() {
+  // ===== Modal admin =====
+  function openModal(title, html){
+    modalTitle.textContent=title;
+    modalBody.innerHTML=html;
+    modalStatus.textContent='';
+    modalStatus.className='status';
+    modal.classList.add('on');
+    modal.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){
+    modal.classList.remove('on');
+    modal.setAttribute('aria-hidden','true');
+  }
+
+  function showAdminLogin(){
     openModal('Login Admin', `
       <div class="grid">
         <div>
@@ -316,32 +329,30 @@
           <input id="adminPass" type="password" placeholder="Masukkan password" />
         </div>
         <button class="primary" id="doLogin">Login</button>
-        <div class="muted small">Fitur admin: lihat data privat, edit, hapus, export CSV.</div>
-      </div>
-    `);
+        <div class="muted">Fitur admin: lihat privat, edit, hapus, export CSV.</div>
+      </div>`);
 
-    document.getElementById('doLogin').onclick = async () => {
-      const pass = document.getElementById('adminPass').value.trim();
-      adminPassword = pass;
-      try {
+    document.getElementById('doLogin').onclick = async ()=>{
+      adminPassword = document.getElementById('adminPass').value.trim();
+      try{
         await refresh();
-        if (!isAdmin) {
-          adminPassword = '';
+        if (!isAdmin){
+          adminPassword='';
           updateAdminUI();
-          setStatus(modalStatus, 'Password salah.', false);
+          setStatus(modalStatus,'Password salah.',false);
           return;
         }
         closeModal();
-      } catch (e) {
-        adminPassword = '';
+      }catch(e){
+        adminPassword='';
         updateAdminUI();
-        setStatus(modalStatus, 'Error: ' + e.message, false);
+        setStatus(modalStatus,'Error: '+e.message,false);
       }
     };
   }
 
-  function showEditModal(id) {
-    const m = members.find(x => x.id === id);
+  function showEditModal(id){
+    const m = members.find(x=>x.id===id);
     if (!m) return;
 
     openModal('Edit Anggota (Admin)', `
@@ -356,7 +367,6 @@
             <input id="e_no_wa" value="${escapeHtml(m.no_wa)}" />
           </div>
         </div>
-
         <div class="grid two">
           <div>
             <label>Prodi</label>
@@ -367,28 +377,21 @@
             <input id="e_kelas" value="${escapeHtml(m.kelas)}" />
           </div>
         </div>
-
         <div>
           <label>Alamat</label>
           <input id="e_alamat" value="${escapeHtml(m.alamat)}" />
         </div>
-
         <div>
           <label>Alasan</label>
           <textarea id="e_alasan">${escapeHtml(m.alasan)}</textarea>
         </div>
-
         <button class="primary" id="doSave">Simpan</button>
-      </div>
-    `);
+      </div>`);
 
-    document.getElementById('doSave').onclick = async () => {
-      try {
-        setStatus(modalStatus, 'Menyimpan...', true);
-        await postNoCors({
-          action: 'update',
-          id,
-          password: adminPassword,
+    document.getElementById('doSave').onclick = async ()=>{
+      try{
+        setStatus(modalStatus,'Menyimpan...',true);
+        await updateMember(id, {
           nama: document.getElementById('e_nama').value,
           no_wa: document.getElementById('e_no_wa').value,
           prodi: document.getElementById('e_prodi').value,
@@ -398,72 +401,80 @@
         });
         await refresh();
         closeModal();
-      } catch (e) {
-        setStatus(modalStatus, 'Gagal simpan. Coba refresh dan ulangi.', false);
+      }catch(e){
+        setStatus(modalStatus,'Error: '+e.message,false);
       }
     };
   }
 
+  // Export CSV
+  function toCSV(rows, cols){
+    const esc=(v)=>{const s=String(v??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+    return cols.join(',')+'\n'+rows.map(r=>cols.map(c=>esc(r[c])).join(',')).join('\n');
+  }
+  function download(name, content, mime){
+    const blob=new Blob([content],{type:mime||'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }
+
+  // Events
+  document.getElementById('btnRefresh').onclick = refresh;
+  document.getElementById('btnAdmin').onclick = showAdminLogin;
+  document.getElementById('btnLogout').onclick = ()=>{adminPassword='';isAdmin=false;updateAdminUI();refresh();};
+
   modalClose.onclick = closeModal;
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
 
-  btnAdmin.onclick = showAdminLogin;
-  btnLogout.onclick = () => { adminPassword = ''; isAdmin = false; updateAdminUI(); refresh(); };
-  btnRefresh.onclick = refresh;
+  search.addEventListener('input', ()=>render(filtered()));
 
-  search.addEventListener('input', () => { renderTable(getFilteredMembers()); });
-
-  regForm.addEventListener('submit', async (e) => {
+  regForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const fd = new FormData(regForm);
-    const payload = Object.fromEntries(fd.entries());
-
-    try {
-      setStatus(regStatus, 'Mengirim...', true);
-      document.getElementById('btnSubmit').disabled = true;
-      await postNoCors(payload);
+    const fd=new FormData(regForm);
+    const payload=Object.fromEntries(fd.entries());
+    try{
+      setStatus(regStatus,'Mengirim...',true);
+      await createMember(payload);
       regForm.reset();
-      setStatus(regStatus, 'Terkirim. Jika data belum muncul, klik Refresh List.', true);
+      setStatus(regStatus,'Berhasil daftar!',true);
       await refresh();
-    } catch (err) {
-      setStatus(regStatus, 'Gagal kirim. Coba lagi.', false);
-    } finally {
-      document.getElementById('btnSubmit').disabled = false;
+    }catch(err){
+      setStatus(regStatus,'Error: '+err.message,false);
     }
   });
 
-  tbody.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const act = btn.getAttribute('data-act');
-    const id = btn.getAttribute('data-id');
-    if (!act || !id) return;
+  tbody.addEventListener('click', async (e)=>{
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const act=btn.getAttribute('data-act');
+    const id=btn.getAttribute('data-id');
 
-    if (act === 'edit') showEditModal(id);
+    if (act==='edit') return showEditModal(id);
 
-    if (act === 'del') {
-      const ok = confirm('Yakin hapus anggota ini?');
-      if (!ok) return;
-      try {
-        setStatus(listStatus, 'Menghapus...', true);
-        await postNoCors({ action: 'delete', id, password: adminPassword });
+    if (act==='del'){
+      if(!confirm('Yakin hapus anggota ini?')) return;
+      try{
+        setStatus(listStatus,'Menghapus...',true);
+        await deleteMember(id);
         await refresh();
-        setStatus(listStatus, 'Terhapus.', true);
-      } catch (err) {
-        setStatus(listStatus, 'Gagal hapus. Coba refresh dan ulangi.', false);
+        setStatus(listStatus,'Terhapus.',true);
+      }catch(err){
+        setStatus(listStatus,'Error: '+err.message,false);
       }
     }
   });
 
-  btnExport.addEventListener('click', () => {
-    if (!isAdmin) return;
-    const cols = ['tanggal_daftar','nama','no_wa','prodi','kelas','alamat','alasan'];
-    const csv = toCSV(members, cols);
-    const date = new Date();
-    const stamp = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  btnExport.addEventListener('click', ()=>{
+    if(!isAdmin) return;
+    const cols=['tanggal_daftar','nama','no_wa','prodi','kelas','alamat','alasan'];
+    const csv=toCSV(members, cols);
+    const d=new Date();
+    const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     download(`ipama-anggota-${stamp}.csv`, csv, 'text/csv');
   });
 
+  // init
   updateAdminUI();
   refresh();
 </script>
