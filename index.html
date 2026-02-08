@@ -33,9 +33,7 @@
     }
     .wrap { max-width: 1100px; margin: 0 auto; }
     .row { display: grid; gap: 16px; }
-    @media (min-width: 960px) {
-      .row { grid-template-columns: 1.2fr 1.8fr; }
-    }
+    @media (min-width: 960px) { .row { grid-template-columns: 1.2fr 1.8fr; } }
     h1 { font-size: 18px; margin: 0; letter-spacing: .4px; }
     .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
     main { padding: 18px 16px 40px; }
@@ -47,16 +45,10 @@
       box-shadow: 0 12px 30px rgba(0,0,0,.28);
     }
     .card h2 { margin: 0 0 12px; font-size: 14px; color: #d8e2ff; }
-    .grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: 1fr;
-    }
-    @media (min-width: 560px) {
-      .grid.two { grid-template-columns: 1fr 1fr; }
-    }
+    .grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 560px) { .grid.two { grid-template-columns: 1fr 1fr; } }
     label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    input, textarea, select {
+    input, textarea {
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
@@ -91,17 +83,14 @@
       font-size: 12px;
     }
     .pill b { color: var(--text); font-weight: 700; }
-
     table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
     th, td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
     th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 700; }
     tr:hover td { background: rgba(255,255,255,.03); }
-
     .muted { color: var(--muted); }
     .status { font-size: 12px; margin-top: 10px; }
     .status.ok { color: var(--ok); }
     .status.err { color: var(--danger); }
-
     .modal {
       position: fixed;
       inset: 0;
@@ -114,7 +103,6 @@
     }
     .modal.on { display: flex; }
     .modal .box { width: min(560px, 100%); }
-
     .small { font-size: 12px; }
   </style>
 </head>
@@ -128,8 +116,6 @@
 
   <main>
     <div class="wrap row">
-
-      <!-- Form Pendaftaran -->
       <section class="card">
         <div class="toolbar">
           <h2>Form Pendaftaran Anggota</h2>
@@ -181,12 +167,9 @@
           <div id="regStatus" class="status"></div>
         </form>
 
-        <div class="small muted" style="margin-top:10px;">
-          Tanggal daftar otomatis tercatat saat kamu submit.
-        </div>
+        <div class="small muted" style="margin-top:10px;">Tanggal daftar otomatis tercatat saat kamu submit.</div>
       </section>
 
-      <!-- List Anggota -->
       <section class="card">
         <div class="toolbar" style="margin-bottom:10px;">
           <h2>List Anggota</h2>
@@ -199,20 +182,16 @@
         <div class="muted small" id="count"></div>
         <div style="overflow:auto; border:1px solid var(--border); border-radius:12px; margin-top:10px;">
           <table>
-            <thead>
-              <tr id="thead"></tr>
-            </thead>
+            <thead><tr id="thead"></tr></thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
 
         <div id="listStatus" class="status"></div>
       </section>
-
     </div>
   </main>
 
-  <!-- Modal Admin Login / Edit -->
   <div id="modal" class="modal" aria-hidden="true">
     <div class="box card">
       <div class="toolbar">
@@ -225,15 +204,12 @@
   </div>
 
 <script>
-  // ====== CONFIG ======
   const API_URL = 'https://script.google.com/macros/s/AKfycbyAW41FmYHCKbejUj3D1KBzV6xnYkBgcc5ohfDIY903wuDwabwbTG1ik-5W7Q-aUVjJ/exec';
 
-  // ====== STATE ======
-  let adminPassword = ''; // disimpan lokal (session) untuk akses admin
+  let adminPassword = '';
   let isAdmin = false;
   let members = [];
 
-  // ====== ELEMENTS ======
   const regForm = document.getElementById('regForm');
   const regStatus = document.getElementById('regStatus');
   const listStatus = document.getElementById('listStatus');
@@ -253,7 +229,6 @@
   const modalStatus = document.getElementById('modalStatus');
   const modalClose = document.getElementById('modalClose');
 
-  // ====== HELPERS ======
   function setStatus(el, msg, ok=true) {
     el.textContent = msg || '';
     el.className = 'status ' + (msg ? (ok ? 'ok' : 'err') : '');
@@ -314,7 +289,6 @@
     }
   }
 
-  // ====== API ======
   async function apiGetMembers() {
     const url = new URL(API_URL);
     if (adminPassword) url.searchParams.set('password', adminPassword);
@@ -328,7 +302,6 @@
   }
 
   async function apiRegister(payload) {
-    // POST-only + text/plain (hindari preflight)
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
@@ -363,9 +336,7 @@
     return json;
   }
 
-  // ====== RENDER ======
   function renderTable(rows) {
-    // Kolom tampil
     const publicCols = [
       { key: 'tanggal_daftar', label: 'Tanggal' },
       { key: 'nama', label: 'Nama' },
@@ -380,10 +351,8 @@
 
     const cols = isAdmin ? adminCols : publicCols;
 
-    // Head
     thead.innerHTML = cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('') + (isAdmin ? '<th>Aksi</th>' : '');
 
-    // Body
     tbody.innerHTML = rows.map(r => {
       const tds = cols.map(c => {
         let v = r[c.key];
@@ -427,7 +396,6 @@
     }
   }
 
-  // ====== ADMIN LOGIN ======
   function showAdminLogin() {
     openModal('Login Admin', `
       <div class="grid">
@@ -460,7 +428,6 @@
     };
   }
 
-  // ====== EDIT MODAL ======
   function showEditModal(id) {
     const m = members.find(x => x.id === id);
     if (!m) return;
@@ -522,34 +489,17 @@
     };
   }
 
-  // ====== EVENTS ======
   modalClose.onclick = closeModal;
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
   btnAdmin.onclick = showAdminLogin;
-  btnLogout.onclick = () => {
-    adminPassword = '';
-    isAdmin = false;
-    updateAdminUI();
-    refresh();
-  };
-
+  btnLogout.onclick = () => { adminPassword = ''; isAdmin = false; updateAdminUI(); refresh(); };
   btnRefresh.onclick = refresh;
 
-  search.addEventListener('input', () => {
-    renderTable(getFilteredMembers());
-  });
+  search.addEventListener('input', () => { renderTable(getFilteredMembers()); });
 
   regForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    if (!API_URL || API_URL.includes('PASTE_APPS_SCRIPT_WEB_APP_URL')) {
-      setStatus(regStatus, 'API_URL belum diisi. Paste URL Apps Script dulu.', false);
-      return;
-    }
-
     const fd = new FormData(regForm);
     const payload = Object.fromEntries(fd.entries());
 
@@ -574,9 +524,7 @@
     const id = btn.getAttribute('data-id');
     if (!act || !id) return;
 
-    if (act === 'edit') {
-      showEditModal(id);
-    }
+    if (act === 'edit') showEditModal(id);
 
     if (act === 'del') {
       const ok = confirm('Yakin hapus anggota ini?');
@@ -601,7 +549,6 @@
     download(`ipama-anggota-${stamp}.csv`, csv, 'text/csv');
   });
 
-  // ====== INIT ======
   updateAdminUI();
   refresh();
 </script>
