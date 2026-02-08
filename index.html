@@ -1,4 +1,20 @@
 <!doctype html>
+<script>
+  // Password gate sederhana (bukan security kuat)
+  const PASS = "ipamawell"; 
+  const key = "ipama_gate_ok";
+
+  if (localStorage.getItem(key) !== "1") {
+    const p = prompt("Masukkan password untuk akses halaman:");
+    if (p === PASS) {
+      localStorage.setItem(key, "1");
+      location.reload();
+    } else {
+      document.documentElement.innerHTML = "<h2>Akses ditolak</h2>";
+      throw new Error("blocked");
+    }
+  }
+</script>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
